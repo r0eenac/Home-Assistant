@@ -70,8 +70,7 @@ An enforcement policy for the LG OLED TV to prevent loud volume accidents in the
 ├── apps                  # AppDaemon Python apps
 ├── /automations          # Split configuration for complex logic
 │   ├── /tv_silence       # TV Volume Logic
-
-```
 │   └── /atomizer         # Scent Diffuser Logic
 ├── /docs                 # Hardware documentation & diagrams
 └── /www                  # Custom assets
+```
