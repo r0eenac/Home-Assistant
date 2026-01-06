@@ -1,0 +1,31 @@
+alias: TV_silence_enabler
+description: ""
+triggers:
+  - at: "04:30:00"
+    id: Turn_ON
+    trigger: time
+  - at: "06:45:01"
+    id: Turn_OFF
+    trigger: time
+conditions: []
+actions:
+  - if:
+      - condition: trigger
+        id:
+          - Turn_ON
+    then:
+      - action: automation.turn_on
+        target:
+          entity_id: automation.tv_silence_10
+        data: {}
+  - if:
+      - condition: trigger
+        id:
+          - Turn_OFF
+    then:
+      - action: automation.turn_off
+        target:
+          entity_id: automation.tv_silence_10
+        data:
+          stop_actions: true
+mode: single
