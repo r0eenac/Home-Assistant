@@ -42,6 +42,7 @@ Operation is permitted only during these specific windows:
 ## 🔄 Workflow Diagram
 
 ```mermaid
+```mermaid
 graph TD
     Trigger[Trigger: Time /20 min <br> OR Manual Force] --> GlobalCheck{Mode = Home?}
     GlobalCheck -- Yes --> PresenceCheck{Anyone Home?}
@@ -49,6 +50,9 @@ graph TD
     PresenceCheck -- Yes --> MotionCheck{Motion in<br>Living Room OR Kitchen?}
     PresenceCheck -- No --> Stop
     MotionCheck -- Yes --> TimeCheck{Is it valid Time?}
+    MotionCheck -- No --> Stop
+    TimeCheck -- Yes --> Action[🚀 Spray for 10s]
+    TimeCheck -- No --> Stop
 ```
 
 ## ⚙️ Entities Used
