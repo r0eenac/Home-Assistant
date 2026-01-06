@@ -1,0 +1,72 @@
+alias: Atomizer_Optimized
+description: מפעיל מפיץ ריח ל-10 שניות כל 20 דקות, רק כשיש אנשים בבית ובחדר הרלוונטי
+triggers:
+  - trigger: time_pattern
+    minutes: /20
+  - trigger: event
+    event_type: force_atomizer_spray
+conditions:
+  - condition: state
+    entity_id: input_select.home_travel
+    state: home
+  - condition: numeric_state
+    entity_id: zone.home
+    above: 0
+  - condition: or
+    conditions:
+      - condition: state
+        entity_id: binary_sensor.fp1_1_presence
+        state: "on"
+      - condition: state
+        entity_id: binary_sensor.kitchen_occ_occupancy
+        state: "on"
+  - condition: or
+    conditions:
+      - condition: time
+        after: "06:35:00"
+        before: "07:05:00"
+        weekday:
+          - sun
+          - mon
+          - tue
+          - wed
+          - thu
+      - condition: time
+        after: "16:45:00"
+        before: "22:30:00"
+        weekday:
+          - sun
+          - mon
+          - tue
+          - wed
+          - thu
+      - condition: time
+        after: "06:45:00"
+        before: "22:30:00"
+        weekday:
+          - fri
+          - sat
+actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.tasmota_2
+    data: {}
+  - delay:
+      seconds: 10
+  - action: switch.turn_off
+    target:
+      entity_id: switch.tasmota_2
+    data: {}
+mode: single
+
+
+#-----------------
+# type: button
+# name: הפעל מפיץ ריח כעת
+# icon: mdi:spray-bottle
+# tap_action:
+#   action: call-service
+#   service: event.fire
+#   service_data:
+#     event_type: force_atomizer_spray
+#-----------------
