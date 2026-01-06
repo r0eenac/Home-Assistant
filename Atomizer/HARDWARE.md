@@ -16,11 +16,17 @@ This document details the hardware teardown, component replacement, and wiring m
 | **Power Supply** | 5V DC Source | Powering the Sonoff & Driver. |
 
 Miyoscent Diffuser - 
+
 <img width="177" height="177" alt="image" src="https://github.com/user-attachments/assets/054bd433-2b92-4366-8cfc-c5f7e016db98" />
 
 Ultrasonic Atomization Maker 20mm - 
+
 <img width="177" height="177" alt="image" src="https://github.com/user-attachments/assets/5c7af0f7-fd53-4f2e-b34f-6b3f527fa6d8" />
 
+Sonoff sv - 
+
+<img width="225" height="225" alt="image" src="https://github.com/user-attachments/assets/5eba0551-71f3-45b3-a0cb-9d43c6e16f3a" />
+### Sonoff works with 220v / 5v, inorder for this to work, a jumper needs to be instrted to convert the V
 ---
 
 ## 🔧 The Build Process
