@@ -41,7 +41,7 @@ Operation is permitted only during these specific windows:
 
 ## 🔄 Workflow Diagram
 
-```mermaid
+
 ```mermaid
 graph TD
     Trigger[Trigger: Time /20 min <br> OR Manual Force] --> GlobalCheck{Mode = Home?}
