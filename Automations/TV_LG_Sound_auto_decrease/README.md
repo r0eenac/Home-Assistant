@@ -4,6 +4,8 @@
 
 This repository contains a dual-automation system for Home Assistant designed to enforce strict volume limits on the LG WebOS TV during sensitive morning hours. It ensures the house remains quiet even if the TV is turned on or the volume is accidentally increased.
 
+<img width="1024" height="559" alt="image" src="https://github.com/user-attachments/assets/7f89bee4-7db8-4dce-84a3-1dd4fb127aba" />
+
 ---
 
 ## 🛠 System Architecture
@@ -72,7 +74,7 @@ Copy the YAML code for the Manager into your automations.yaml.
 
 Reload Automations in 'Developer Tools'.
 
-###⚙️ Configuration Notes
+### ⚙️ Configuration Notes
 Volume Threshold: Currently set to 0.1 (10%). To change, update the numeric_state condition and the volume_set action in the Enforcer automation.
 
 Time Window:
