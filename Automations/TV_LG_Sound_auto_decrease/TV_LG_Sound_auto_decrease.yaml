@@ -1,1 +1,38 @@
+alias: Tv_silence_Optimized_Final
+description: "Limit TV volume between 05:00 and 07:00"
+mode: restart
 
+trigger:
+  # 1. תופס כל שינוי ידני בווליום
+  - platform: state
+    entity_id: media_player.lg_webos_tv_oled65c1pva
+    attribute: volume_level
+
+  # 2. תופס מצב שהטלוויזיה נדלקת (למקרה שכובתה על ווליום גבוה)
+  - platform: state
+    entity_id: media_player.lg_webos_tv_oled65c1pva
+    to: "on"
+
+  # 3. "מסדר" את הווליום בול ב-05:00 אם הטלוויזיה כבר דלקה לפני
+  - platform: time
+    at: "05:00:00"
+
+condition:
+  # חלון זמן
+  - condition: time
+    after: "04:59:00" # הרחבה דקה אחורה כדי להבטיח שטריגר 05:00 יתקבל
+    before: "07:00:00"
+
+  # בדיקה שהווליום באמת דורש הנמכה
+  # הסרתי את ה-for כדי שהתגובה תהיה מיידית
+  - condition: numeric_state
+    entity_id: media_player.lg_webos_tv_oled65c1pva
+    attribute: volume_level
+    above: 0.1
+
+action:
+  - service: media_player.volume_set
+    target:
+      entity_id: media_player.lg_webos_tv_oled65c1pva
+    data:
+      volume_level: 0.1
