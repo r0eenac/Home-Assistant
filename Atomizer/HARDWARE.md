@@ -2,7 +2,15 @@
 
 > **Project Goal:** Converting a proprietary "dumb" aroma diffuser (Miyoscent) into a locally controlled IoT device using Sonoff SV.
 
-This document details the hardware teardown, component replacement, and wiring modifications required to build the smart atomizer.
+---
+
+## ⚠️ LEGAL DISCLAIMER & WARNING
+
+**PLEASE READ CAREFULLY BEFORE PROCEEDING:**
+
+* **HIGH VOLTAGE RISK:** While this specific guide focuses on 5V USB power, working with any electronics involves risks. If you choose to use alternative power supplies or modify mains-powered devices, you risk electric shock, fire, and death.
+* **NO WARRANTY:** Modifications described herein verify void the manufacturer's warranty.
+* **LIMITATION OF LIABILITY:** This guide is provided "AS IS" without warranty of any kind. The author assumes **NO RESPONSIBILITY** for any damage to equipment, personal injury, or fire resulting from the use or misuse of this information. **You perform these modifications entirely at your own risk.**
 
 ---
 
@@ -11,23 +19,24 @@ This document details the hardware teardown, component replacement, and wiring m
 | Component | Description | Role |
 | :--- | :--- | :--- |
 | **Miyoscent Diffuser** | Standard commercial unit | The "Donor" (Shell & Fluid tank). |
-| **Sonoff SV** | Safe Voltage WiFi Relay | The new MCU/Controller. |
+| **Sonoff SV** | Safe Voltage WiFi Relay | The new MCU/Controller (5V-24V DC). |
 | **Atomizer Driver** | Ultrasonic Transducer Plate | Generates the mist. |
-| **Power Supply** | 5V DC Source | Powering the Sonoff & Driver. |
+| **Power Supply** | 5V DC Source (USB) | Powering the Sonoff & Driver. |
 
-### Components Visuals
+---
 
-**1. Miyoscent Diffuser**
-<img width="177" height="177" alt="Miyoscent Diffuser" src="https://github.com/user-attachments/assets/054bd433-2b92-4366-8cfc-c5f7e016db98" />
+## 📸 Components Overview
 
-**2. Ultrasonic Atomization Maker (20mm)**
-<img width="177" height="177" alt="Atomizer" src="https://github.com/user-attachments/assets/5c7af0f7-fd53-4f2e-b34f-6b3f527fa6d8" />
+| Component | Visual Reference |
+| :--- | :--- |
+| **1. Miyoscent Diffuser**<br>*(The Donor Device)* | <img src="https://github.com/user-attachments/assets/054bd433-2b92-4366-8cfc-c5f7e016db98" width="150" /> |
+| **2. Atomizer Maker**<br>*(20mm Ultrasonic Plate)* | <img src="https://github.com/user-attachments/assets/5c7af0f7-fd53-4f2e-b34f-6b3f527fa6d8" width="150" /> |
+| **3. Sonoff SV**<br>*(The Smart Controller)* | <img src="https://github.com/user-attachments/assets/5eba0551-71f3-45b3-a0cb-9d43c6e16f3a" width="150" /> |
 
-**3. Sonoff SV**
-<img width="225" height="225" alt="Sonoff SV" src="https://github.com/user-attachments/assets/5eba0551-71f3-45b3-a0cb-9d43c6e16f3a" />
-
-### ⚠️ Critical Note: Voltage Configuration
-The Sonoff SV supports a wide voltage range (5V-24V). **For this project (5V), the input jumper must be inserted correctly to bridge the power supply.** Ensure you verify this before powering on.
+### ⚡ Critical Technical Note: Sonoff SV
+The **Sonoff SV (Safe Voltage)** is designed for **DC 5V-24V input only**.
+* **DO NOT** connect 110V/220V AC directly to the input terminals. This will destroy the device.
+* **Jumper Setting:** For this 5V project, ensure the input jumper is inserted correctly to bridge the power supply to the relay.
 
 ---
 
@@ -37,29 +46,25 @@ The Sonoff SV supports a wide voltage range (5V-24V). **For this project (5V), t
 The original proprietary logic board (PCB) was completely removed from the Miyoscent casing. This removes the manual buttons and the original limited firmware, leaving only the plastic shell and the tank assembly.
 
 ### 2. The Controller: Sonoff SV
-We selected the **Sonoff SV (Safe Voltage)** because it operates on low DC voltage and provides a clean, isolate-able relay.
+We selected the Sonoff SV because it operates on low DC voltage and provides a clean, isolate-able relay.
 
-* **Voltage Modification:** The Sonoff SV was modified to operate smoothly on a **5V** standard USB power supply.
+* **Voltage Modification:** The Sonoff SV is powered by a standard **5V** USB power supply.
 * **Wiring:**
-    * **Input:** 5V DC.
-    * **Output (Relay):** Connected directly to the **Atomizer Driver Plate**.
+    * **Input:** 5V DC (from USB breakout).
+    * **Output (Relay):** The relay output is wired to trigger the **Atomizer Driver Plate**.
 
 ### 3. Integration
 The driver plate and the Sonoff SV were mounted inside the original casing. The ultrasonic disc was sealed against the liquid tank using the original gasket to prevent leaks.
 
 ---
 
-## ⚡ Technical Constraints & Logic
+## ⚡ Logic Explanation
 
 ### Why Time-Based Control?
 A common question is why we control the **duration** of the spray rather than the **intensity** (volume).
 
 1.  **The Limitation:** The Sonoff SV acts as a **Binary Relay** (On/Off switch). It simply closes or opens a circuit.
-2.  **Intensity Requirements:** To control mist intensity (make it stronger or weaker), the driver plate requires a **PWM (Pulse Width Modulation)** signal to adjust the frequency/duty cycle of the ultrasonic vibrations.
-3.  **The Result:** Since the Sonoff SV cannot natively output complex PWM signals to this specific driver without significant ESPHome firmware rewriting and additional MOSFET hardware, we opted for **Binary Control**.
+2.  **Intensity Requirements:** To control mist intensity, the driver plate would require a **PWM (Pulse Width Modulation)** signal.
+3.  **The Solution:** Since the Sonoff SV (in this configuration) does not output PWM:
     * **State:** Full Power (On) / Off.
-    * **Dosage Control:** Achieved by limiting the *time* the device is active (e.g., 10-second bursts) rather than lowering the power.
-
----
-
-> **Warning:** This modification involves voiding the warranty of the original device and working with exposed electronics. Ensure proper insulation to protect the components from moisture generated by the atomizer.
+    * **Dosage Control:** Achieved by limiting the *time* the device is active (e.g., 10-second bursts) via Home Assistant automation.
