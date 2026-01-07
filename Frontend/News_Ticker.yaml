@@ -1,0 +1,65 @@
+type: custom:button-card
+show_name: false
+show_icon: true
+icon: mdi:newspaper
+entity: binary_sensor.news_sensor
+styles:
+  card:
+    - height: 48px
+    - padding: 6px 12px
+    - overflow: hidden
+    - display: flex
+    - align-items: center
+  icon:
+    - width: 22px
+    - color: var(--primary-text-color)
+    - margin-right: 8px
+  custom_fields:
+    news:
+      - overflow: hidden
+      - white-space: nowrap
+      - flex: 1
+      - direction: ltr
+custom_fields:
+  news: |
+    [[[
+      const ent = states['binary_sensor.news_sensor'];
+      if (!ent) return '';
+      const msg = ent.attributes?.msg1 || '';
+      if (!msg) return '';
+      const safe = (msg + '').replaceAll('<','&lt;').replaceAll('>','&gt;');
+      // שכפול הטקסט ללולאה
+      return `
+        <div class="ticker">
+          <span class="track">${safe} &nbsp;&nbsp;•&nbsp;&nbsp; ${safe}</span>
+        </div>
+      `;
+    ]]]
+card_mod:
+  style: |
+    ha-card {
+      overflow: hidden;
+      position: relative;
+      direction: ltr !important; /* 💥 מכריח את כל הכרטיס להיות שמאל→ימין */
+    }
+
+    ha-card .ticker {
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    ha-card .track {
+      display: inline-block;
+      padding-left: 100%;
+      animation: ticker-move 150s linear infinite;
+    }
+
+    ha-card:hover .track {
+      animation-play-state: paused;
+    }
+
+    /* 👇 כאן התנועה משמאל לימין */
+    @keyframes ticker-move {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
