@@ -1,0 +1,18 @@
+alias: "Failed Login attempt "
+description: ""
+mode: single
+triggers:
+  - update_type:
+      - added
+    notification_id: ""
+    trigger: persistent_notification
+conditions:
+  - condition: template
+    value_template: |
+      {{ 'Login attempt' in trigger.notification.title }}
+actions:
+  - data:
+      title: Failed Login !!!
+      target: -12345678
+      message: "{{ trigger.notification.message }}"
+    action: telegram_bot.send_message
