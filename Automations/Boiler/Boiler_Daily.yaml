@@ -1,0 +1,138 @@
+alias: Boiler_Daily_under26
+description: "Smart Boiler Logic with Safety Fail-safes"
+mode: restart
+
+trigger:
+  # 1. הפעלה יומית חכמה (לפי חישוב שעה)
+  - platform: template
+    value_template: "{{ now().strftime('%H:%M') == states('sensor.boiler_trigger_time') }}"
+    id: Triggered
+
+  # 2. שעת גג לכיבוי (בטיחות - Hard Stop)
+  - platform: time
+    at: "18:32:00"
+    id: Closer
+
+  # 3. הגנה מהתחממות יתר (מעל 60 מעלות)
+  # בודק שהנתונים עדכניים (מה-3 שעות האחרונות)
+  - platform: template
+    value_template: |2-
+      {% set temp = states('sensor.boiler_temp_temperature') | float(0) %}
+      {% set last_changed = states.sensor.boiler_temp_temperature.last_changed %}
+      {% set hours_since_update = (now() - last_changed).total_seconds() / 3600 %}
+      {{ temp > 60 and hours_since_update < 3 }}
+    id: Hot_Enough
+
+condition:
+  # תנאים גלובליים - חובה להיות בבית וחובה שיהיה חורף
+  - condition: state
+    entity_id: input_select.home_travel
+    state: home
+  - condition: template
+    value_template: "{{ now().month in [10, 11, 12, 1, 2, 3, 4] }}"
+
+action:
+  # --- תרחיש 1: הדלקה יומית ---
+  - if:
+      - condition: trigger
+        id: Triggered
+      - condition: template
+        value_template: "{{ is_state('sensor.boiler_turn', 'Yes') }}"
+      # תנאי זה נמצא כאן ולא ב-global כדי לאפשר למנגנוני הבטיחות לפעול כשהדוד דולק
+      - condition: state
+        entity_id: switch.boiler
+        state: "off"
+    then:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.boiler
+      
+      # הודעות התחלה
+      - service: notify.greenapi
+        data:
+          title: "🔥🚿 דוד מים חכם"
+          message: "📢 הדלקתי את הדוד למשך {{ states('sensor.boiler_time') | int(30) }} דקות"
+          target: 123456789@g.us
+      - service: telegram_bot.send_message
+        data:
+          title: "Smart Boiler"
+          message: "📢 הדלקתי את הדוד למשך {{ states('sensor.boiler_time') | int(30) }} דקות"
+          target: -10012345678
+      
+      # כריזה קולית (TTS) - התחלה
+      - service: media_player.volume_set
+        target:
+          entity_id: media_player.living_room_speaker
+        data:
+          volume_level: 0.7
+      - service: tts.speak
+        target:
+          entity_id: tts.google_translate_iw_co_il
+        data:
+          media_player_entity_id: media_player.living_room_speaker
+          message: "זיהיתי שהיה קר היום, הדלקתי את הדוד ל-{{ states('sensor.boiler_time') | int(30) }} דקות"
+      
+      # המתנה לזמן החימום
+      - delay: "{{ (states('sensor.boiler_time') | int(30) * 60) }}"
+      
+      # כיבוי וסיום
+      - service: switch.turn_off
+        target:
+          entity_id: switch.boiler
+      
+      # הודעות סיום
+      - service: media_player.volume_set
+        target:
+          entity_id: media_player.living_room_speaker
+        data:
+          volume_level: 0.78
+      - service: tts.speak
+        target:
+          entity_id: tts.google_translate_iw_co_il
+        data:
+          media_player_entity_id: media_player.living_room_speaker
+          message: "כיביתי את הדוד, יאללה לכו להתקלח"
+      - service: telegram_bot.send_message
+        data:
+          title: "Smart Boiler"
+          message: "📢 כיביתי את הדוד"
+          target: -10012345678
+      - service: notify.greenapi
+        data:
+          title: "🔥🚿 דוד מים חכם"
+          message: "📢 כיביתי את הדוד"
+          target: 123456789@g.us
+
+  # --- תרחיש 2: שעת גג (Failsafe) ---
+  - if:
+      - condition: trigger
+        id: Closer
+      - condition: state
+        entity_id: switch.boiler
+        state: "on"
+    then:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.boiler
+      - service: notify.greenapi
+        data:
+          title: "🔥🚿 Error"
+          message: "האוטומציה לא סיימה בזמן, סוגר את הדוד (Failsafe)."
+          target: 123456789@g.us
+
+  # --- תרחיש 3: הגנת חום (Overheat) ---
+  - if:
+      - condition: trigger
+        id: Hot_Enough
+      - condition: state
+        entity_id: switch.boiler
+        state: "on"
+    then:
+      - service: notify.greenapi
+        data:
+          title: "🔥🚿 Max Temp"
+          message: "הטמפרטורה הגיעה למקסימום (60°), מכבה לשמירה על הדוד."
+          target: 123456789@g.us
+      - service: switch.turn_off
+        target:
+          entity_id: switch.boiler
