@@ -1,0 +1,33 @@
+- sensor:
+      - name: "Bedroom Mold Risk"
+        unique_id: bedroom_mold_risk
+        unit_of_measurement: "%"
+        state: >
+          {# 1. Variables #}
+          {% set t_in = states('sensor.bedroom_temperature') | float(0) %}
+          {% set h_in = states('sensor.bedroom_humidity') | float(0) %}
+          {% set frsi = states('sensor.bedroom_wall_insulation_factor_frsi') | float(0.7) %} 
+          {# Default to 0.7 if no calculation exists yet #}
+          
+          {% set t_out = states('sensor.outdoor_temperature') | float(0) %}
+          
+          {# 2. Calculate expected wall temperature (based on factor) #}
+          {% set t_wall_calc = t_out + (frsi * (t_in - t_out)) %}
+          
+          {# 3. Calculate Dew Point - approximation formula #}
+          {% set dp = t_in - ((100 - h_in) / 5) %}
+          
+          {# 4. Critical calculation: Mold starts at 80% wall humidity #}
+          {# Therefore we compare to a point slightly above the dew point #}
+          {% set critical_temp = dp + 3 %} 
+          
+          {# 5. Risk Logic #}
+          {% if t_wall_calc <= dp %}
+            100
+          {% elif t_wall_calc <= critical_temp %}
+            {# Linear calculation of risk between 0 and 100 in the danger zone #}
+            {{ ((critical_temp - t_wall_calc) / 3 * 100) | round(0) }}
+          {% else %}
+            0
+          {% endif %}
+        icon: mdi:bacteria-outline
