@@ -1,0 +1,21 @@
+# Mold Risk Check for Tomorrow Morning
+# Uses the previously calculated fRsi + forecasted minimum temperature for tonight
+template:
+  - binary_sensor:
+      - name: "Mold Warning Tomorrow"
+        state: >
+          {% set frsi = states('sensor.bedroom_wall_insulation_factor_frsi') | float(0.7) %}
+          {% set t_in_target = 21 %} {# Assuming comfortable room temperature at night #}
+          {% set h_in_target = 60 %} {# Estimated night humidity #}
+          
+          {# Fetch lowest forecasted temperature #}
+          {% set t_out_forecast = state_attr('weather.forecast_home', 'forecast')[0].templow | float(0) %}
+          
+          {# Calculate expected wall temperature #}
+          {% set t_wall_future = t_out_forecast + (frsi * (t_in_target - t_out_forecast)) %}
+          
+          {# Calculate future dew point #}
+          {% set dp_future = t_in_target - ((100 - h_in_target) / 5) %}
+          
+          {# Will the wall be colder than the dew point (with safety buffer)? #}
+          {{ t_wall_future <= (dp_future + 2) }}
