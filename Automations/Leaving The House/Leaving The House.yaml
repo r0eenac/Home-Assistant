@@ -1,23 +1,17 @@
-alias: Leaving The House (Optimized + Lights)
-description: ""
+alias: Master Presence Automation (Lights, AC, Covers, Media)
+description: Handles everything when leaving or arriving home
 triggers:
   - entity_id:
       - sensor.is_anyone_home
     from: Pending
     to: AWAY
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 0
+    for: "00:00:00"
     id: Left_The_House
     trigger: state
   - entity_id:
       - sensor.is_anyone_home
     to: HOME
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 0
+    for: "00:00:00"
     id: Come_Back
     from: AWAY
     trigger: state
@@ -50,11 +44,11 @@ actions:
               {% set no_occupancy =
               states('binary_sensor.kitchen_occ_occupancy') == 'off' and 
                                     is_state('binary_sensor.shoes_room_occ_occupancy', 'off') and
-                                    is_state('binary_sensor.Service_room_OCC_occupancy', 'off') and
+                                    is_state('binary_sensor.service_room_occupancy', 'off') and
                                     is_state('binary_sensor.shower_occ_occupancy', 'off') and
                                     is_state('binary_sensor.fp1_1_presence', 'off') %}
 
-              {# בדיקה שה-FP1 זיהה תנועה ב-20 הדקות האחרונות #}  {% set
+              {# FP1 Must have been active within last 20 mins #} {% set
               fp1_valid_time = (now() -
               states.binary_sensor.fp1_1_presence.last_changed).total_seconds()
               < 1200 %}
@@ -67,7 +61,7 @@ actions:
               value: AWAY
             action: input_text.set_value
           - data:
-              message: סוגר כל מה שצריך
+              message: סוגר אורות, מזגנים ותריסים...
               title: אין אף אחד בבית
             action: telegram_bot.send_message
           - target:
@@ -96,6 +90,42 @@ actions:
                       device_id: 7c680e1aecadc8be85d0ed081c13fb93
                     data: {}
                     action: media_player.turn_off
+              - sequence:
+                  - device_id: 1e03abdbf9ed0568e2a873241e4041fd
+                    domain: cover
+                    entity_id: 727e26a8389cfc1a942daa172736361d
+                    type: set_position
+                    position: 18
+                  - device_id: 2ec0225ed5d6fe089b4ace8c586cc062
+                    domain: cover
+                    entity_id: 6f910c3c36bf243b83796c89f65a959f
+                    type: set_position
+                    position: 20
+                  - device_id: f3aa83227d689581d3ee56d2665154f7
+                    domain: cover
+                    entity_id: bb7f98691ffbc89b20a598bd6442f1ce
+                    type: set_position
+                    position: 0
+                  - device_id: 1a2a17428194942bf03f9653678b0de4
+                    domain: cover
+                    entity_id: 1483191d099ae2c5249e571cdf90c5aa
+                    type: set_position
+                    position: 20
+                  - device_id: e6f7003d0c595e6cf8f261dfa6e8f1dc
+                    domain: cover
+                    entity_id: ffa7158f47ea1c4e2fc3e94f80772b8d
+                    type: set_position
+                    position: 20
+                  - device_id: 512b1e5e76d22dd9507521f5e897e388
+                    domain: cover
+                    entity_id: 9a83e6618f53f17d305d74a371dfe9aa
+                    type: set_position
+                    position: 20
+                  - device_id: 70fc4c8f022f4a3062f77d76b40dace3
+                    domain: cover
+                    entity_id: 4235f02746eae1c6e510bf735ee31cfd
+                    type: set_position
+                    position: 20
       - conditions:
           - condition: trigger
             id:
@@ -108,7 +138,7 @@ actions:
             action: input_text.set_value
           - data:
               title: מישהו נכנס הביתה
-              message: "מישהו נכנס הביתה "
+              message: ברוכים הבאים!
             action: telegram_bot.send_message
           - if:
               - condition: sun
