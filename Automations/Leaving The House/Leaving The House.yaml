@@ -1,0 +1,122 @@
+alias: Leaving The House (Optimized + Lights)
+description: ""
+triggers:
+  - entity_id:
+      - sensor.is_anyone_home
+    from: Pending
+    to: AWAY
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+    id: Left_The_House
+    trigger: state
+  - entity_id:
+      - sensor.is_anyone_home
+    to: HOME
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+    id: Come_Back
+    from: AWAY
+    trigger: state
+conditions: []
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - Left_The_House
+          - condition: time
+            before: "18:00:00"
+            weekday:
+              - thu
+              - wed
+              - tue
+              - mon
+              - sun
+          - condition: template
+            value_template: >
+              {{ (is_state('binary_sensor.main_door_contact', 'off') and (now()
+              -
+              states.binary_sensor.main_door_contact.last_changed).total_seconds()
+              < 600) or (is_state('binary_sensor.main_lock_contact', 'off') and
+              (now() -
+              states.binary_sensor.main_lock_contact.last_changed).total_seconds()
+              < 600) }}
+          - condition: template
+            value_template: >-
+              {% set no_occupancy =
+              states('binary_sensor.kitchen_occ_occupancy') == 'off' and 
+                                    is_state('binary_sensor.shoes_room_occ_occupancy', 'off') and
+                                    is_state('binary_sensor.Service_room_OCC_occupancy', 'off') and
+                                    is_state('binary_sensor.shower_occ_occupancy', 'off') and
+                                    is_state('binary_sensor.fp1_1_presence', 'off') %}
+
+              {# בדיקה שה-FP1 זיהה תנועה ב-20 הדקות האחרונות #}  {% set
+              fp1_valid_time = (now() -
+              states.binary_sensor.fp1_1_presence.last_changed).total_seconds()
+              < 1200 %}
+
+              {{ no_occupancy and fp1_valid_time }}
+        sequence:
+          - target:
+              entity_id: input_text.anyone_home
+            data:
+              value: AWAY
+            action: input_text.set_value
+          - data:
+              message: סוגר כל מה שצריך
+              title: אין אף אחד בבית
+            action: telegram_bot.send_message
+          - target:
+              entity_id:
+                - automation.virtual_button_lights_off
+                - automation.closing_all_acs
+            data:
+              skip_condition: true
+            action: automation.trigger
+          - parallel:
+              - if:
+                  - condition: state
+                    entity_id: media_player.lg_webos_smart_tv
+                    state: "on"
+                then:
+                  - target:
+                      device_id: 245241da339b3cde7fa5f45a33d4e2ca
+                    data: {}
+                    action: media_player.turn_off
+              - if:
+                  - condition: state
+                    entity_id: media_player.lg_webos_smart_tv_2
+                    state: "on"
+                then:
+                  - target:
+                      device_id: 7c680e1aecadc8be85d0ed081c13fb93
+                    data: {}
+                    action: media_player.turn_off
+      - conditions:
+          - condition: trigger
+            id:
+              - Come_Back
+        sequence:
+          - target:
+              entity_id: input_text.anyone_home
+            data:
+              value: HOME
+            action: input_text.set_value
+          - data:
+              title: מישהו נכנס הביתה
+              message: "מישהו נכנס הביתה "
+            action: telegram_bot.send_message
+          - if:
+              - condition: sun
+                after: sunset
+                after_offset: "-00:30:00"
+            then:
+              - action: light.turn_on
+                target:
+                  device_id: f925de82cfdc467f8050d04beac95757
+                data: {}
+mode: single
