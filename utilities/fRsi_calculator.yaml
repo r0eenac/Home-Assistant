@@ -1,0 +1,23 @@
+- sensor:
+      - name: "Bedroom Wall Insulation Factor (fRsi)"
+        unique_id: bedroom_wall_frsi
+        unit_of_measurement: "fRsi"
+        state: >
+          {# --- Step 1: Get the raw data from sensors --- #}
+          {% set t_wall = states('sensor.bedroom_wall_temperature') | float(0) %}
+          {% set t_out = states('sensor.outdoor_temperature') | float(0) %}
+          {% set t_in = states('sensor.bedroom_temperature') | float(0) %}
+
+          {# --- Step 2: The Logic --- #}
+          {# Formula: (Wall - Out) divided by (Room - Out) #}
+          
+          {# We must check if (Room - Out) is 0 to avoid crashing (division by zero) #}
+          {% set delta_temp = t_in - t_out %}
+          
+          {% if delta_temp | abs > 0.5 %}
+            {# Calculate the formula #}
+            {{ ((t_wall - t_out) / delta_temp) | round(2) }}
+          {% else %}
+            {# If temp difference is too small, calculation is invalid #}
+            unavailable
+          {% endif %}
