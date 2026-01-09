@@ -1,54 +1,68 @@
 ```mermaid
 graph TD
-    %% --- 1. הגדרת סגנונות עם טקסט כהה (High Contrast) ---
-    %% Trigger - סגול רך עם טקסט סגול כהה
+    %% --- 1. הגדרת סגנונות (אותו עיצוב בדיוק) ---
     classDef trigger fill:#E1BEE7,stroke:#4A148C,stroke-width:2px,color:#4A148C;
-    
-    %% Action - כחול רך עם טקסט כחול כהה
     classDef action fill:#BBDEFB,stroke:#0D47A1,stroke-width:1px,color:#0D47A1;
-    
-    %% Check - צהוב בהיר עם טקסט חום כהה (לקריאות מקסימלית)
     classDef check fill:#FFF9C4,stroke:#FBC02D,stroke-width:1px,stroke-dasharray: 5 5,color:#5D4037;
-    
-    %% Stop - אדום רך עם טקסט אדום כהה
     classDef stop fill:#FFCDD2,stroke:#B71C1C,stroke-width:2px,color:#B71C1C;
+    classDef flag fill:#C8E6C9,stroke:#2E7D32,stroke-width:2px,color:#1B5E20;
 
-    %% --- 2. הגדרת הצמתים (Nodes) ---
-    T_Time("🕒 Trigger: Calculated Time")
-    T_Heat("🔥 Trigger: Temp > 60°C")
-    T_Fail("🛑 Trigger: Time 18:32")
+    %% --- 2. אוטומציה 1: הדלקה (ON Logic) ---
+    T_Sched("🕒 Trigger: Schedule Time")
+    Cond_Global{"❄️ Winter &<br/>🏠 Home &<br/>⚪ Off?"}
+    Act_FlagON["🚩 Action: Set Flag ON"]
+    Act_TurnON["⚡ Action: Turn Switch ON"]
+    Act_NotifyON["📱 Notify: ON + TTS"]
 
-    %% --- 3. התהליך הראשי ---
-    T_Time --> Cond_Global{"❄️ Winter &<br/>🏠 Home?"}
-    Cond_Global -- Yes --> Cond_State{"Boiler is<br/>OFF?"}
-    
-    Cond_State -- Yes --> TurnOn["⚡ Turn Switch ON"]
-    TurnOn --> NotifyON["📱 Notify: ON + TTS"]
-    NotifyON --> Wait["⏳ Wait: Calculated Duration"]
-    
-    Wait --> TurnOff["⚫ Turn Switch OFF"]
-    TurnOff --> NotifyOFF["📱 Notify: OFF + TTS"]
+    T_Sched --> Cond_Global
+    Cond_Global -- Yes --> Act_FlagON
+    Act_FlagON --> Act_TurnON
+    Act_TurnON --> Act_NotifyON
 
-    %% --- 4. תהליך בטיחות (Safety) ---
-    T_Heat --> Cond_On1{"Boiler is<br/>ON?"}
-    Cond_On1 -- Yes --> SafetyOff["⚫ Emergency OFF"]
-    SafetyOff --> NotifyHeat["📱 Alert: Overheat Protection"]
+    %% --- 3. אוטומציה 2: כיבוי (OFF Logic) ---
+    %% טריגרים
+    T_Auto("⏳ Trigger: Auto Time<br/>(Sensor Limit)")
+    T_Manual("✋ Trigger: Manual Time<br/>(1.5 Hours)")
+    T_Safety("🔥/🛑 Trigger: Safety<br/>(Overheat / 18:32)")
 
-    %% --- 5. תהליך Failsafe ---
-    T_Fail --> Cond_On2{"Boiler is<br/>ON?"}
-    Cond_On2 -- Yes --> ForceOff["⚫ Force OFF"]
-    ForceOff --> NotifyFail["📱 Alert: Loop Failed"]
+    %% בדיקות
+    Cond_Flag{"🚩 Flag is<br/>ON?"}
+    Cond_NoFlag{"🚩 Flag is<br/>OFF?"}
 
-    %% --- 6. סיומים ---
+    %% פעולה מרכזית
+    Act_TurnOFF["⚫ Action: Turn Switch OFF"]
+    Act_NotifyOFF["📱 Notify: Reason"]
+
+    %% זרימה אוטומטית
+    T_Auto --> Cond_Flag
+    Cond_Flag -- Yes --> Act_TurnOFF
+
+    %% זרימה ידנית
+    T_Manual --> Cond_NoFlag
+    Cond_NoFlag -- Yes --> Act_TurnOFF
+
+    %% זרימה בטיחותית (עוקף דגלים)
+    T_Safety --> Act_TurnOFF
+
+    Act_TurnOFF --> Act_NotifyOFF
+
+    %% --- 4. אוטומציה 3: ניקיון (Cleanup) ---
+    T_Clean("📉 Trigger: Boiler changed to OFF")
+    Act_FlagOFF["🏳️ Action: Reset Flag to OFF"]
+
+    %% חיבור לוגי (הכיבוי מפעיל את הניקיון)
+    Act_TurnOFF -.-> T_Clean
+    T_Clean --> Act_FlagOFF
+
+    %% --- 5. סיומים ---
     Cond_Global -- No --> End((End))
-    Cond_State -- No --> End
-    Cond_On1 -- No --> End
-    Cond_On2 -- No --> End
+    Cond_Flag -- No --> End
+    Cond_NoFlag -- No --> End
 
-    %% --- 7. החלת העיצוב ---
-    class T_Time,T_Heat,T_Fail trigger
-    class TurnOn,NotifyON,Wait,TurnOff,NotifyOFF action
-    class Cond_Global,Cond_State,Cond_On1,Cond_On2 check
-    class SafetyOff,NotifyHeat,ForceOff,NotifyFail stop
-
+    %% --- 6. החלת עיצוב ---
+    class T_Sched,T_Auto,T_Manual,T_Safety,T_Clean trigger
+    class Act_TurnON,Act_NotifyON,Act_TurnOFF,Act_NotifyOFF,Act_FlagOFF action
+    class Cond_Global,Cond_Flag,Cond_NoFlag check
+    class End stop
+    class Act_FlagON flag
 ```
