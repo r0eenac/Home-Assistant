@@ -35,146 +35,6 @@ This automation relies on the following custom entities:
 
 > **Note:** Sensitive IDs (Telegram Chat ID, WhatsApp Group ID) have been replaced with placeholders. Please update them with your own.
 
-
-```yaml
-alias: Boiler_Daily_under26
-description: "Smart Boiler Logic with Safety Fail-safes"
-mode: restart
-
-trigger:
-  # 1. Daily Activation (Dynamic Time)
-  - platform: template
-    value_template: "{{ now().strftime('%H:%M') == states('sensor.boiler_trigger_time') }}"
-    id: Triggered
-
-  # 2. Hard Stop Failsafe (Time limit)
-  - platform: time
-    at: "18:32:00"
-    id: Closer
-
-  # 3. Overheat Protection (>60°C)
-  - platform: template
-    value_template: |2-
-      {% set temp = states('sensor.boiler_temp_temperature') | float(0) %}
-      {% set last_changed = states.sensor.boiler_temp_temperature.last_changed %}
-      {# Calculation fixed to verify data is fresh (updated in the last 3 hours) #}
-      {% set hours_since_update = (now() - last_changed).total_seconds() / 3600 %}
-      {{ temp > 60 and hours_since_update < 3 }}
-    id: Hot_Enough
-
-condition:
-  # Global Conditions
-  - condition: state
-    entity_id: input_select.home_travel
-    state: home
-  - condition: template
-    value_template: "{{ now().month in [10, 11, 12, 1, 2, 3, 4] }}"
-
-action:
-  # --- Scenario 1: Daily Activation ---
-  - if:
-      - condition: trigger
-        id: Triggered
-      - condition: template
-        value_template: "{{ is_state('sensor.boiler_turn', 'Yes') }}"
-      # Check 'OFF' state here to ensure safety triggers are not blocked
-      - condition: state
-        entity_id: switch.boiler
-        state: "off"
-    then:
-      - service: switch.turn_on
-        target:
-          entity_id: switch.boiler
-      
-      # Notifications
-      - service: notify.greenapi
-        data:
-          title: "🔥🚿 Smart Boiler"
-          message: "📢 Turned ON for {{ states('sensor.boiler_time') | int(30) }} minutes."
-          target: 1234567890@g.us  # REPLACE THIS
-      - service: telegram_bot.send_message
-        data:
-          title: "Smart Boiler"
-          message: "📢 Turned ON for {{ states('sensor.boiler_time') | int(30) }} minutes."
-          target: -987654321  # REPLACE THIS
-      
-      # TTS Announcement
-      - service: media_player.volume_set
-        target:
-          entity_id: media_player.living_room_speaker
-        data:
-          volume_level: 0.7
-      - service: tts.speak
-        target:
-          entity_id: tts.google_translate_iw_co_il
-        data:
-          media_player_entity_id: media_player.living_room_speaker
-          message: "It was cold today, turning boiler ON for {{ states('sensor.boiler_time') | int(30) }} minutes."
-      
-      # Wait Loop
-      - delay: "{{ (states('sensor.boiler_time') | int(30) * 60) }}"
-      
-      # Turn Off & Notify
-      - service: switch.turn_off
-        target:
-          entity_id: switch.boiler
-      - service: media_player.volume_set
-        target:
-          entity_id: media_player.living_room_speaker
-        data:
-          volume_level: 0.78
-      - service: tts.speak
-        target:
-          entity_id: tts.google_translate_iw_co_il
-        data:
-          media_player_entity_id: media_player.living_room_speaker
-          message: "Boiler is OFF, time to shower."
-      - service: telegram_bot.send_message
-        data:
-          title: "Smart Boiler"
-          message: "📢 Boiler turned OFF."
-          target: -987654321  # REPLACE THIS
-      - service: notify.greenapi
-        data:
-          title: "🔥🚿 Smart Boiler"
-          message: "📢 Boiler turned OFF."
-          target: 1234567890@g.us  # REPLACE THIS
-
-  # --- Scenario 2: Failsafe (Closer) ---
-  - if:
-      - condition: trigger
-        id: Closer
-      - condition: state
-        entity_id: switch.boiler
-        state: "on"
-    then:
-      - service: switch.turn_off
-        target:
-          entity_id: switch.boiler
-      - service: notify.greenapi
-        data:
-          title: "🔥🚿 Error"
-          message: "Automation loop failed. Closing boiler via Failsafe."
-          target: 1234567890@g.us  # REPLACE THIS
-
-  # --- Scenario 3: Overheat Protection ---
-  - if:
-      - condition: trigger
-        id: Hot_Enough
-      - condition: state
-        entity_id: switch.boiler
-        state: "on"
-    then:
-      - service: notify.greenapi
-        data:
-          title: "🔥🚿 Max Temp"
-          message: "Temperature reached limit (60°C). Turning OFF for safety."
-          target: 1234567890@g.us  # REPLACE THIS
-      - service: switch.turn_off
-        target:
-          entity_id: switch.boiler
-
-```
 ## 🛠️ Required templates 
 This block is the boiler trigger time which calculate when should the boiler turned on, in order to achieve hot water at 1830 
 
@@ -214,3 +74,17 @@ sensor:
             0
           {% endif %}
   ```
+
+and the auto flag bool -
+```yaml
+alias: "System: Reset Boiler Flag"
+description: ""
+triggers:
+  - trigger: state
+    entity_id: switch.boiler
+    to: "off"
+actions:
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.boiler_auto_mode
+```
