@@ -1,0 +1,83 @@
+alias: Boiler - OFF Logic (Smart Hybrid)
+description: "מנהל כיבוי חכם: מבדיל בין זמן סנסור (לאוטומטי) לזמן קבוע (לידני)"
+triggers:
+  - trigger: state
+    entity_id: switch.boiler
+    to: "on"
+    for:
+      minutes: "{{ states('sensor.boiler_time') | int(30) }}"
+    id: Auto_Time_Limit
+  - trigger: state
+    entity_id:
+      - switch.boiler
+    to:
+      - "on"
+    for:
+      hours: 1
+      minutes: 30
+      seconds: 0
+    id: Manual_Safety_Time
+  - trigger: time
+    at: "18:32:00"
+    id: Absolute_Time
+  - trigger: numeric_state
+    entity_id: sensor.boiler_temp_temperature
+    above: 60
+    id: Overheat
+conditions: []
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: Auto_Time_Limit
+          - condition: state
+            entity_id: input_boolean.boiler_auto_mode
+            state: "on"
+        sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: switch.boiler
+          - action: notify.greenapi
+            data:
+              message: 📢 כיביתי את הדוד (נגמר הזמן האוטומטי).
+              target: 12345678@g.us
+          - data:
+              title: דוד מים חכם
+              message: 📢 כיביתי את הדוד
+              target: -12345678
+            action: telegram_bot.send_message
+      - conditions:
+          - condition: trigger
+            id: Manual_Safety_Time
+          - condition: state
+            entity_id: input_boolean.boiler_auto_mode
+            state: "off"
+        sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: switch.boiler
+          - action: notify.greenapi
+            data:
+              message: 🛡️ כיביתי את הדוד (עברה שעה וחצי של הפעלה ידנית).
+              target: 12345678@g.us
+          - data:
+              title: דוד מים חכם
+              message: 📢  כיביתי את הדוד עברה שעה וחצי של פעולה
+              target: -1234568
+            action: telegram_bot.send_message
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: trigger
+                id: Absolute_Time
+              - condition: trigger
+                id: Overheat
+        sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: switch.boiler
+          - action: notify.greenapi
+            data:
+              message: ⚠️ כיביתי בחירום (שעה 18:32 או חום יתר).
+              target: 12345678@g.us
+mode: single
