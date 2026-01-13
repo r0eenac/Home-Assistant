@@ -44,4 +44,5 @@ In Home Assistant, a standard `Numeric State` trigger only fires when the value 
 
 only worked 3 times during the night , instead of a whole night 
 
+<img width="1024" height="559" alt="image" src="https://github.com/user-attachments/assets/2d8d12a2-247d-4cd4-bfa0-3dd919c2a33d" />
 
