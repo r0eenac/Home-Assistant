@@ -1,0 +1,94 @@
+alias: Radiator
+description: ""
+triggers:
+  - entity_id:
+      - sensor.radiator_low
+    from: "False"
+    to: "True"
+    id: below
+    trigger: state
+  - entity_id:
+      - sensor.radiator_high
+    from: "False"
+    to: "True"
+    id: above
+    trigger: state
+  - at: "06:31:00"
+    id: "OFF"
+    trigger: time
+  - at: "06:35:00"
+    id: "OFF"
+    trigger: time
+  - at: "06:45:00"
+    id: "OFF"
+    trigger: time
+conditions:
+  - condition: state
+    entity_id: input_select.home_travel
+    state: home
+actions:
+  - if:
+      - condition: trigger
+        id:
+          - below
+      - condition: state
+        entity_id: switch.kids_socket
+        state: "off"
+      - condition: template
+        value_template: |2
+
+            {% set current_time = now().time() %}
+            {% set start_time = '19:00:00'.split(':') | map('int') | list %}
+            {% set end_time = '06:30:00'.split(':') | map('int') | list %}
+            {% set in_time_range = current_time >= current_time.replace(hour=start_time[0], minute=start_time[1], second=start_time[2]) or current_time <= current_time.replace(hour=end_time[0], minute=end_time[1], second=end_time[2]) %}
+            {% set in_months = now().month in [12, 1, 2, 3, 4] %}
+            {{ in_time_range and in_months }}
+    then:
+      - target:
+          entity_id: switch.kids_socket
+        data: {}
+        action: switch.turn_on
+      - data:
+          message: הדלקתי את הרדיאטור, זיהייתי שהחדר קר
+          title: "ענבל את יכולה להירגע "
+          target: -123456
+        action: telegram_bot.send_message
+      - action: notify.greenapi
+        data:
+          message: 📢 הדלקתי את הרדיאטור החדר קר וזו שעת שינה
+          target: 123456@g.us
+  - if:
+      - condition: trigger
+        id:
+          - above
+      - condition: state
+        entity_id: switch.kids_socket
+        state: "on"
+    then:
+      - target:
+          entity_id:
+            - switch.kids_socket
+        data: {}
+        action: switch.turn_off
+      - data:
+          title:  בלי פאניקה
+          message: סגרתי את הרדיאטור, אדליק שוב כשיתחיל להתקרר
+          target: -123456
+        action: telegram_bot.send_message
+      - action: notify.greenapi
+        data:
+          message: 📢 "כיביתי את הדוד ( החדר חם שעת שינה )."
+          target: 123456@g.us
+  - if:
+      - condition: trigger
+        id:
+          - "OFF"
+      - condition: state
+        entity_id: switch.kids_socket
+        state: "on"
+    then:
+      - target:
+          entity_id: switch.kids_socket
+        data: {}
+        action: switch.turn_off
+mode: single
