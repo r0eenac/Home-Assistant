@@ -29,3 +29,25 @@ Standard oil-filled radiators come with a built-in mechanical thermostat. After 
 2.  **Short Cycling & Energy Waste:** Due to the false readings, the radiator enters a cycle of turning on and off every ~30 minutes. This "Short Cycling" is inefficient, causing unnecessary wear on the device and resulting in **significant waste of money** on electricity without actually heating the room effectively.
 
 ---
+# Smart Radiator Control - Hardware Setup
+
+This document outlines the physical hardware requirements for the project.
+
+## 🛠 Bill of Materials (BOM)
+
+1.  **Shelly 1 PM (or Plus 1 PM):**
+    * **Role:** Smart Relay for On/Off control.
+    * **Requirement:** Must be the "PM" model to monitor energy consumption (Wattage) and costs.
+    
+2.  **External Temperature Sensor:**
+    * **Type:** Zigbee / WiFi / BLE.
+    * **Placement:** Must be placed away from the radiator (e.g., near the bed) to measure the true room temperature.
+
+3.  **Standard Radiator:**
+    * Any standard oil-filled or electric radiator.
+    * **Configuration:** The physical thermostat on the device must be set to **MAXIMUM** to ensure the Shelly relay has full control.
+
+## 🔌 Wiring & Installation
+
+* **Switch:** The radiator plugs into the socket controlled by the Shelly 1 PM.
+* **Safety:** Ensure the Shelly unit is rated for the wattage of the radiator (typically 2000W-2500W).
