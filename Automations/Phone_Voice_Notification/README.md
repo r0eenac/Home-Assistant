@@ -2,7 +2,7 @@
 # HA-Critical-TTS: Bypass Silent Mode for Urgent Alerts
 
 A robust Home Assistant automation logic to ensure your mobile device speaks out loud during emergencies, even if it's set to silent or "Do Not Disturb" mode.
-
+The automation uses Jinja2 templates to fetch dynamic content from sensor attributes, making it perfect for RSS feeds, news flashes, or personalized weather reports.
 <img width="756" height="694" alt="image" src="https://github.com/user-attachments/assets/5e536680-9bbf-4d63-9b78-96c7672d13c2" />
 
 ## 📖 Overview
