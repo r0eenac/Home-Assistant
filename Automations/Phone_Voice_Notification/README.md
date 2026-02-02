@@ -62,7 +62,7 @@ action:
 
 mode: single
 ```
-
+## You can find the full code in the [Automation YAML file](./Phone_Voice_Notification.yaml).
 
 ## ⚙️ Device Settings (Crucial for Hebrew Support)
 To get the best voice quality and ensure Hebrew is supported correctly, you must adjust the Text-to-Speech settings on your Android device:
