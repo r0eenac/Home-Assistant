@@ -1,0 +1,60 @@
+# in this automation, i'm fetching data from RSS with specific parameters , which i want to be informed by voice 
+## but you can do what ever you want , such as - Leak alarm , smoke alarm ... or anything else
+
+# the triger is when the binary sensor changes to on
+alias: Phone_Voice_Notification_news_flash
+description: ""
+triggers:
+  - trigger: state
+    entity_id:
+      - binary_sensor.news_sensor
+    from:
+      - "off"
+    to:
+      - "on"
+
+# i want this to be applied only if i'm home, so this won't inturpt me while outside
+## i also want to make sure , it want happened when talking in the phone . since it's bypassing the call volume
+conditions:
+  - condition: state
+    entity_id: person.name of person
+    state:
+      - home
+  - condition: state
+    entity_id: sensor.sm_sxyze_phone_state
+    state:
+      - idle
+  - condition: time
+    after: "06:50:00"
+    before: "21:00:00"
+
+# First of all, i want to increase the alarm_stram level 
+## then wait 1 second , since the action takes about a second 
+### then sends the tts notification
+#### finally , i want to restore the alarm level to previous level
+actions:
+  - action: notify.sm_sxyze_phone_state
+    data:
+      message: command_volume_level
+      data:
+        media_stream: alarm_stream
+        command: 100
+  - delay:
+      seconds: 1
+  - action: notify.sm_sxyze_phone_state
+    data:
+      message: TTS
+      data:
+        tts_text: "{{ state_attr('binary_sensor.news_sensor','msg1')}}"
+        media_stream: alarm_stream
+        ttl: 0
+        priority: high
+  - delay:
+      seconds: 10
+  - action: notify.sm_sxyze_phone_state
+    data:
+      message: command_volume_level
+      data:
+        media_stream: alarm_stream
+        command: 10
+mode: single
