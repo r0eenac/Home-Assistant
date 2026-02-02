@@ -1,60 +1,61 @@
-# in this automation, i'm fetching data from RSS with specific parameters , which i want to be informed by voice 
-## but you can do what ever you want , such as - Leak alarm , smoke alarm ... or anything else
+alias: "Phone Voice Notification: News Flash"
+description: "Announces news via TTS when home, during day hours, and not on a call."
 
-# the triger is when the binary sensor changes to on
-alias: Phone_Voice_Notification_news_flash
-description: ""
 triggers:
   - trigger: state
-    entity_id:
-      - binary_sensor.news_sensor
-    from:
-      - "off"
-    to:
-      - "on"
+    entity_id: binary_sensor.news_sensor
+    from: "off"
+    to: "on"
 
-# i want this to be applied only if i'm home, so this won't inturpt me while outside
-## i also want to make sure , it want happened when talking in the phone . since it's bypassing the call volume
 conditions:
+  # Ensure you are home
   - condition: state
-    entity_id: person.name of person
-    state:
-      - home
+    entity_id: person.your_name # <--- Change to your person entity
+    state: "home"
+  
+  # Ensure you are not currently on a phone call (to avoid ear-blasting)
   - condition: state
-    entity_id: sensor.sm_sxyze_phone_state
-    state:
-      - idle
+    entity_id: sensor.your_phone_id_phone_state # <--- Change to your phone state sensor
+    state: "idle"
+    
+  # Only during waking hours
   - condition: time
     after: "06:50:00"
     before: "21:00:00"
 
-# First of all, i want to increase the alarm_stram level 
-## then wait 1 second , since the action takes about a second 
-### then sends the tts notification
-#### finally , i want to restore the alarm level to previous level
 actions:
-  - action: notify.sm_sxyze_phone_state
+  # 1. Increase the alarm_stream level to max
+  - action: notify.mobile_app_your_phone_id # <--- Change to your mobile_app notify service
     data:
-      message: command_volume_level
+      message: "command_volume_level"
       data:
-        media_stream: alarm_stream
+        media_stream: "alarm_stream"
         command: 100
+
+  # 2. Wait for the system to register the volume change
   - delay:
       seconds: 1
-  - action: notify.sm_sxyze_phone_state
+
+  # 3. Send the TTS notification fetching data from the sensor attribute
+  - action: notify.mobile_app_your_phone_id # <--- Change to your mobile_app notify service
     data:
-      message: TTS
+      message: "TTS"
       data:
-        tts_text: "{{ state_attr('binary_sensor.news_sensor','msg1')}}"
-        media_stream: alarm_stream
+        tts_text: "{{ state_attr('binary_sensor.news_sensor','msg1') }}"
+        media_stream: "alarm_stream"
         ttl: 0
         priority: high
+
+  # 4. Wait for the announcement to finish (adjust if news flashes are long)
   - delay:
       seconds: 10
-  - action: notify.sm_sxyze_phone_state
+
+  # 5. Restore the alarm level to a normal background level (e.g., 10%)
+  - action: notify.mobile_app_your_phone_id # <--- Change to your mobile_app notify service
     data:
-      message: command_volume_level
+      message: "command_volume_level"
       data:
-        media_stream: alarm_stream
+        media_stream: "alarm_stream"
         command: 10
+
 mode: single
